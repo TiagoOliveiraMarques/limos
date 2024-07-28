@@ -1,7 +1,15 @@
 package main
 
-import "log/slog"
+import (
+	"github.com/TiagoOliveiraMarques/limos/pkg/php"
+	"log/slog"
+)
 
 func main() {
-	slog.Info("Hello world")
+	err := php.PhpModuleInit()
+	if err != nil {
+		panic(err)
+	}
+
+	slog.Info("Done")
 }
