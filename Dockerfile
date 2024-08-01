@@ -11,6 +11,10 @@ RUN go mod download
 COPY . .
 RUN go build -o /app/limos .
 
+FROM builder as test
+WORKDIR /app
+ENTRYPOINT ["go", "test", "./..."]
+
 FROM php:8.3-zts-bookworm
 WORKDIR /app
 COPY --from=builder /app/limos /app/limos

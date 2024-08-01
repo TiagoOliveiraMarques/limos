@@ -23,3 +23,11 @@ func PhpModuleInit() error {
 
 	return nil
 }
+
+func PhpModuleShutdown() error {
+	if status := C.limos_php_module_shutdown(); status != 0 {
+		return errors.New("Failed to shutdown PHP module")
+	}
+
+	return nil
+}

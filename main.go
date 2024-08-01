@@ -11,5 +11,11 @@ func main() {
 		panic(err)
 	}
 
+	defer func() {
+		if err := php.PhpModuleShutdown(); err != nil {
+			panic(err)
+		}
+	}()
+
 	slog.Info("Done")
 }
