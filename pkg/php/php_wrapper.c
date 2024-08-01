@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <sapi/embed/php_embed.h>
+#include <libgen.h>
 
 const char HARDCODED_INI[] =
     "html_errors=0\n"
@@ -30,13 +31,25 @@ int limos_php_module_init(int threadCount) {
 void limos_php_thread_init() {
     /* initial resource fetch */
     (void)ts_resource(0);
-# ifdef PHP_WIN32
-     ZEND_TSRMLS_CACHE_UPDATE();
-# endif
 }
 
 int limos_php_execute(char* script, size_t valuesLen, char** keys, char** values) {
-    // TODO
+    if (php_request_startup() == FAILURE) return -1;
+
+    FILE* fp = fopen(script, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Could not file PHP file to execute: %s\n", script);
+        php_request_shutdown((void*) 0);
+        return -1;
+    }
+
+    zend_file_handle file_handle;
+    zend_stream_init_fp(&file_handle, fp, basename(script));
+    php_execute_script(&file_handle);
+
+    int exitStatus = EG(exit_status);
+    php_request_shutdown((void*) 0);
+
     return 0;
 }
 

@@ -14,6 +14,7 @@ import "C"
 import (
 	"errors"
 	"runtime"
+	"unsafe"
 )
 
 func phpModuleInit() error {
@@ -36,4 +37,15 @@ func phpModuleShutdown() error {
 
 func phpThreadInit() {
 	C.limos_php_thread_init()
+}
+
+func phpExecuteScript(script string, values map[string]string) error {
+	cscript := C.CString(script)
+	defer C.free(unsafe.Pointer(cscript))
+
+	if status := C.limos_php_execute(cscript, C.size_t(0), nil, nil); status != 0 {
+		return errors.New("Failed to execute PHP script")
+	}
+
+	return nil
 }
