@@ -27,9 +27,12 @@ int limos_php_module_init(int threadCount) {
     return 0;
 }
 
-int limos_php_thread_init() {
-    // TODO
-    return 0;
+void limos_php_thread_init() {
+    /* initial resource fetch */
+    (void)ts_resource(0);
+# ifdef PHP_WIN32
+     ZEND_TSRMLS_CACHE_UPDATE();
+# endif
 }
 
 int limos_php_execute(char* script, size_t valuesLen, char** keys, char** values) {

@@ -6,6 +6,7 @@ import (
 )
 
 func TestPhpInitAndShutdown(t *testing.T) {
-	require.NoError(t, PhpModuleInit())
-	require.NoError(t, PhpModuleShutdown())
+	require.NoError(t, phpModuleInit())
+	phpThreadInit()
+	require.NoError(t, phpModuleShutdown())
 }
