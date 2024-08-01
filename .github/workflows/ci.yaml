@@ -16,6 +16,7 @@ jobs:
         with:
           push: false
           target: test
+          load: true
           tags: |
             limos:test-${{ github.sha }}
       - name: Test
