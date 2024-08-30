@@ -1,21 +1,22 @@
-FROM php:8.3-zts-bookworm as builder
-
-# Install golang
-COPY --from=golang:1.22.5 /usr/local/go /usr/local/go
-ENV PATH="/usr/local/go/bin:$PATH"
+FROM php:8.3-zts-bullseye as builder
 
 WORKDIR /app
-COPY go.* .
-RUN go mod download
+
+# Install meson
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    ninja-build
+RUN pip3 install meson
 
 COPY . .
-RUN go build -o /app/limos .
+RUN meson setup builddir
+RUN meson compile -C builddir
 
-FROM builder as test
-WORKDIR /app
-ENTRYPOINT ["go", "test", "./..."]
+FROM php:8.3-zts-bullseye
+WORKDIR /usr/bin
 
-FROM php:8.3-zts-bookworm
-WORKDIR /app
-COPY --from=builder /app/limos /app/limos
-ENTRYPOINT ["/app/limos"]
+COPY --from=builder /app/builddir/limos /usr/bin/limos
+ENTRYPOINT ["/usr/bin/limos"]
