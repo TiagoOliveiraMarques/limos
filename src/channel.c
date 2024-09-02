@@ -15,7 +15,7 @@ typedef struct channel_t {
 } channel_t;
 
 static uint8_t* channel_next_ptr(channel_t* chan, uint8_t* ptr) {
-    assert(ptr == chan->begin || ptr == chan->end);
+    assert(ptr == chan->read_ptr || ptr == chan->write_ptr);
 
     uint8_t* next = ptr + chan->element_size;
     next = next > chan->end ? chan->begin : next;
@@ -66,7 +66,8 @@ static int channel_try_send(channel_t* chan, void* message) {
 }
 
 static int channel_try_recv(channel_t* chan, void* message) {
-    if (channel_is_empty(chan)) return -1;
+    if (channel_is_empty(chan)) 
+        return -1;
 
     memcpy(message, chan->read_ptr, chan->element_size);
     chan->read_ptr = channel_next_ptr(chan, chan->read_ptr);
@@ -74,26 +75,31 @@ static int channel_try_recv(channel_t* chan, void* message) {
 }
 
 int channel_send(channel_t* chan, void* message) {
-    if (pthread_mutex_lock(&chan->lock) != 0) return CHANNEL_ERR;
-    while (!chan->closed && channel_try_send(chan, message) != 0) {
+    if (pthread_mutex_lock(&chan->lock) != 0) return -1;
+    while (!chan->closed) {
+        if (channel_try_send(chan, message) == 0) break;
+        
         if (pthread_cond_wait(&chan->not_full, &chan->lock) != 0) {
             pthread_mutex_unlock(&chan->lock);
             return CHANNEL_ERR;           
         }
     }
 
+    bool closed = chan->closed;
+
     pthread_cond_signal(&chan->not_empty);
     pthread_mutex_unlock(&chan->lock);
     
-    // we are reading the closed property outside of the mutual exclusion
-    // zone, but once a channel is closed (and this thread saw it being
-    // close), it won't be open again.
-    return chan->closed ? CHANNEL_OK : CHANNEL_CLOSED;
+    return closed ? CHANNEL_CLOSED : CHANNEL_OK;
 }
 
 int channel_recv(channel_t* chan, void* message) {
+    int read_status = 0;
     if (pthread_mutex_lock(&chan->lock) != 0) return CHANNEL_ERR;
-    while (channel_try_recv(chan, message) != 0 && !chan->closed) {
+    
+    while ((read_status = channel_try_recv(chan, message)) != 0) {
+        if (chan->closed) break;
+
         if (pthread_cond_wait(&chan->not_empty, &chan->lock) != 0) {
             pthread_mutex_unlock(&chan->lock);
             return CHANNEL_ERR;           
@@ -103,10 +109,7 @@ int channel_recv(channel_t* chan, void* message) {
     pthread_cond_signal(&chan->not_full);
     pthread_mutex_unlock(&chan->lock);
 
-    // we are reading the closed property outside of the mutual exclusion
-    // zone, but once a channel is closed (and this thread saw it being
-    // close), it won't be open again.
-    return chan->closed ? CHANNEL_OK : CHANNEL_CLOSED;
+    return read_status == 0 ? CHANNEL_OK : CHANNEL_CLOSED;
 }
 
 int channel_close(channel_t* chan) {

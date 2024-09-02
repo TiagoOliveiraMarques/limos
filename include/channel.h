@@ -6,9 +6,9 @@
 typedef struct channel_t channel_t;
 
 enum {
-    CHANNEL_OK,
-    CHANNEL_ERR,
-    CHANNEL_CLOSED
+    CHANNEL_OK = 0,
+    CHANNEL_ERR = 1,
+    CHANNEL_CLOSED = 2,
 };
 
 channel_t* channel_create(size_t capacity, size_t element_size);
