@@ -5,7 +5,7 @@
 #include <assert.h>
 #include "channel.h"
 
-#define N 10
+#define N 100000
 
 static volatile int sum;
 
