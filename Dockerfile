@@ -14,6 +14,7 @@ RUN pip3 install meson
 COPY . .
 RUN meson setup builddir
 RUN meson compile -C builddir
+RUN meson test -C builddir
 
 FROM php:8.3-zts-bullseye
 WORKDIR /usr/bin
