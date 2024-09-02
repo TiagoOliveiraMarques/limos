@@ -1,2 +1,10 @@
 .github
 builddir/
+.vscode
+CMakeFiles/
+*.cmake
+CMakeCache.txt
+limos
+Makefile
+test_*
+Testing/
